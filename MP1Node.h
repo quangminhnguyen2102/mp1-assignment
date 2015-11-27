@@ -55,6 +55,9 @@ private:
 	Params *par;
 	Member *memberNode;
 	char NULLADDR[6];
+	
+	void heartbeat_check(Address*, void*, size_t);
+    	void join_req(Address*, void*, size_t)
 
 public:
 	MP1Node(Member *, Params *, EmulNet *, Log *, Address *);
@@ -76,6 +79,8 @@ public:
 	void initMemberListTable(Member *memberNode);
 	void printAddress(Address *addr);
 	virtual ~MP1Node();
+ 	void loglist();
+    	void send_random(Address*, long);
 };
 
 #endif /* _MP1NODE_H_ */
