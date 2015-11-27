@@ -197,7 +197,7 @@ void Application::fail() {
 	if( par->SINGLE_FAILURE && par->getcurrtime() == 100 ) {
 		removed = (rand() % par->EN_GPSZ);
 		#ifdef DEBUGLOG
-		log->LOG(&mp1[removed]->getMemberNode()->addr, "Node 1 failed at time=%d", par->getcurrtime());
+		log->LOG(&mp1[removed]->getMemberNode()->addr, "Node failed at time=%d", par->getcurrtime());
 		#endif
 		mp1[removed]->getMemberNode()->bFailed = true;
 	}
