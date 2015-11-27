@@ -77,7 +77,7 @@ void MP1Node::nodeStart(char *servaddrstr, short servport) {
     }
 
     if( !introduceSelfToGroup(&joinaddr) ) {
-        finishUpThisNode();
+        finishUpThisNode(&joinaddr); /khai bao khong hoan thanh thi loai no ra
 #ifdef DEBUGLOG
         log->LOG(&memberNode->addr, "Unable to join self to group. Exiting.");
 #endif
@@ -159,18 +159,24 @@ int MP1Node::introduceSelfToGroup(Address *joinaddr) {
  *
  * DESCRIPTION: Wind up this node and clean up state
  */
-int MP1Node::finishUpThisNode(){
-   /*
-    * Your code goes here
-    */
+int MP1Node::finishUpThisNode(Address *joinaddr){
+	memberNode->inGroup = false;
++   
++    memberNode->nnb = 0;
++    memberNode->heartbeat = 0;
++    memberNode->pingCounter = TFAIL;
++    memberNode->timeOutCounter = -1;
++
++    
++    #ifdef DEBUGLOG
++        log->LOG(&memberNode->addr, " ****** delete state out list ******");
++    #endif
++    // initMemberListTable(Member *memberNode)
++    // initMemberListTable(memberNode);
++
 }
 
-/**
- * FUNCTION NAME: nodeLoop
- *
- * DESCRIPTION: Executed periodically at each member
- * 				Check your messages in queue and perform membership protocol duties
- */
+
 void MP1Node::nodeLoop() {
     if (memberNode->bFailed) {
     	return;
@@ -218,6 +224,7 @@ bool MP1Node::recvCallBack(void *env, char *data, int size ) {
 	/*
 	 * Your code goes here
 	 */
+	 if(&env->MsgTypes)
 }
 
 /**
