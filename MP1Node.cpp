@@ -235,8 +235,8 @@ bool MP1Node::recvCallBack(void *env, char *data, unsigned int size ) {
     
     switch (msg->msgType) {
         case JOINREQ:
-            JoinHandler(src_addr, data, size);
-           HeartbeatHandler(src_addr, data, size);
+          join_req(source_addr, data, size);
+          heartbeat_check(source_addr, data, size);
             break;
         case JOINREP:
         {
@@ -245,7 +245,7 @@ bool MP1Node::recvCallBack(void *env, char *data, unsigned int size ) {
             msg << "Received JOINREP from the node " <<  src_addr->getAddress();
             msg << " data " << *(long*)(data );
             log->LOG(&memberNode->addr, msg.str().c_str());
-            HeartbeatHandler(src_addr, data, size);
+            Heartbeat_check(src_addr, data, size);
            break;
         }
         case PINGRANDOM:
@@ -266,7 +266,7 @@ Address AddressFromMLE(MemberListEntry* mle) {
 }
 
 /*Handler that can be invoked on reception of a JOINREQ message*/
-void MP1Node::JoinHandler(Address* addr, void* data, size_t size) {
+void MP1Node::Join_req(Address* addr, void* data, size_t size) {
     MessageHdr* msg;
     size_t msgsize = sizeof(MessageHdr) + sizeof(memberNode->addr) + sizeof(long) + 1;
     msg = (MessageHdr *) malloc(msgsize * sizeof(char));
@@ -283,15 +283,16 @@ void MP1Node::JoinHandler(Address* addr, void* data, size_t size) {
 }
 
 /*Handler function that can be invoked on reception of a HeartBeat message*/
-void MP1Node::HeartbeatHandler(Address* addr, void* data, size_t size) {
+void MP1Node::Heartbeat_check(Address* addr, void* data, size_t size) {
     std::stringstream msg;
-    assert(size >= sizeof(long));
     long *heartbeat = (long*)data;
-    
-    bool newData = UpdateMembershipList(addr, *heartbeat);
-    if (newData) {
-        LogMembershipList();
-        SendHBToRandMember(addr, *heartbeat);
+    //kiem tra co trong ds ko
+    bool check = UpdateMembershipList(addr, *heartbeat);
+    if (check) {
+        //ghi log
+        loglist();
+        // send ngau nien addr
+        send_random(addr, *heartbeat);
     }
 }
 
@@ -344,7 +345,7 @@ int timeout = 5;
             }
             memberNode->memberList.resize(memberNode->memberList.size()-1);
             it -= 1;
-            LogMembershipList();
+            LogList();
             log->logNodeRemove(&memberNode->addr, &addr);
         }
     }
@@ -352,7 +353,7 @@ int timeout = 5;
     /*Update Membership list based on the changes done above*/
     UpdateMembershipList(&memberNode->addr, ++memberNode->heartbeat);
     
-    SendHBToRandMember(&memberNode->addr,
+    Send_random(&memberNode->addr,
                       memberNode->heartbeat);
     return;
 }
@@ -393,7 +394,7 @@ void MP1Node::initMemberListTable(Member *memberNode, int id, short port) {
     memberNode->memberList.push_back(mle);
 }
 
-void MP1Node::LogMembershipList() {
+void MP1Node::LogList() {
     stringstream msg;
     msg << "[";
     for (vector<MemberListEntry>::iterator it = memberNode->memberList.begin(); it != memberNode->memberList.end(); it++) {
@@ -405,7 +406,7 @@ void MP1Node::LogMembershipList() {
 }
 
 /*Send ping to random member*/
-void MP1Node::SendHBToRandMember(Address *src_addr, long heartbeat) {
+void MP1Node::Send_random(Address *src_addr, long heartbeat) {
  
     double prob = k / (double)memberNode->memberList.size();
     
