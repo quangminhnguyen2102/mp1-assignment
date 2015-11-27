@@ -46,22 +46,23 @@ int main(int argc, char *argv[]) {
  */
 Application::Application(char *infile) {
 	int i;
-	par = new Params();
-	srand (time(NULL));
-	par->setparams(infile);
-	log = new Log(par);
-	en = new EmulNet(par);
-	mp1 = (MP1Node **) malloc(par->EN_GPSZ * sizeof(MP1Node *));
+	par = new Params();	//goi ham Parameter khoi tao
+	srand (time(NULL));	//Ramdom thoi gian
+	par->setparams(infile);	//goi function setparams truyen vao infile->tao ra gia tri 
+					//	MAX_NNB, SINGLE_FAILURE, DROP_MSG, MSG_DROP_PROB,allNodesJoined=10;EN_GPSZ=10
+	log = new Log(par);	//khoi tao log voi params  
+	en = new EmulNet(par);	/khoi tao Emulet voi params
+	mp1 = (MP1Node **) malloc(par->EN_GPSZ * sizeof(MP1Node *)); //cap phat o nho cho mp1 voi kich thuoc la 10
 
 	/*
 	 * Init all nodes
 	 */
-	for( i = 0; i < par->EN_GPSZ; i++ ) {
+	for( i = 0; i < par->EN_GPSZ; i++ ) { //for i=0...10 lay ra dia chi IP: 1.0.0.0:0 APP...
 		Member *memberNode = new Member;
 		memberNode->inited = false;
 		Address *addressOfMemberNode = new Address();
 		Address joinaddr;
-		joinaddr = getjoinaddr();
+		joinaddr = getjoinaddr(); //ham lay ra dia chi
 		addressOfMemberNode = (Address *) en->ENinit(addressOfMemberNode, par->PORTNUM);
 		mp1[i] = new MP1Node(memberNode, par, en, log, addressOfMemberNode);
 		log->LOG(&(mp1[i]->getMemberNode()->addr), "APP");
@@ -96,8 +97,9 @@ int Application::run()
 	srand(time(NULL));
 
 	// As time runs along
-	for( par->globaltime = 0; par->globaltime < TOTAL_RUNNING_TIME; ++par->globaltime ) {
+	for( par->globaltime = 0; par->globaltime < TOTAL_RUNNING_TIME; ++par->globaltime ) { //Define TOTAL_RUNNING_TIME =700
 		// Run the membership protocol
+		// printf("STEPRATE run= %lf\n",par->STEP_RATE);
 		mp1Run();
 		// Fail some nodes
 		fail();
@@ -120,14 +122,21 @@ int Application::run()
  */
 void Application::mp1Run() {
 	int i;
-
+	// printf("EN_GPSZ= %d\n",par->EN_GPSZ);
 	// For all the nodes in the system
-	for( i = 0; i <= par->EN_GPSZ-1; i++) {
+	for( i = 0; i <= par->EN_GPSZ-1; i++) {     	//EN_GPSZ=10
+
 
 		/*
 		 * Receive messages from the network and queue them in the membership protocol queue
 		 */
-		if( par->getcurrtime() > (int)(par->STEP_RATE*i) && !(mp1[i]->getMemberNode()->bFailed) ) {
+	// curerent time tang theo i ham run() goi.
+		 // printf("STEPRATE= %lf; getcurrtime= %d\n",par->STEP_RATE,par->getcurrtime());
+		 // printf("Kieu In= %d\n",(int)(par->STEP_RATE*i)  );
+		 //getcurrtime =0 -> 699
+		if( par->getcurrtime() > (int)(par->STEP_RATE*i) && !(mp1[i]->getMemberNode()->bFailed) ) 
+		// if(timecurrent>0.25*i) && member->bfail=true)
+		{ 
 			// Receive messages from the network and queue them
 			mp1[i]->recvLoop();
 		}
@@ -140,7 +149,12 @@ void Application::mp1Run() {
 		/*
 		 * Introduce nodes into the distributed system
 		 */
-		if( par->getcurrtime() == (int)(par->STEP_RATE*i) ) {
+		if( par->getcurrtime() == (int)(par->STEP_RATE*i) ) // khi currenttime =0,1,2; i=0,4,8
+		{
+		// printf("\n+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n");
+		// printf("getcurrtime= %d; STEPRATE =%d,; i= %d; (STEPRATE*i)= %d", par->getcurrtime(),(int)par->STEP_RATE,i,(int)par->STEP_RATE*i);
+		// printf("\n+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n");
+		
 			// introduce the ith node into the system at time STEPRATE*i
 			mp1[i]->nodeStart(JOINADDR, par->PORTNUM);
 			cout<<i<<"-th introduced node is assigned with the address: "<<mp1[i]->getMemberNode()->addr.getAddress() << endl;
@@ -174,14 +188,16 @@ void Application::fail() {
 	int i, removed;
 
 	// fail half the members at time t=400
-	if( par->DROP_MSG && par->getcurrtime() == 50 ) {
+	// printf("par->DROP_MSG= %d\n",par->DROP_MSG );
+	if( par->DROP_MSG && par->getcurrtime() == 50 )	//par->DROP_MSG ???? 0 ; par->getcurrtime() == 50 thi par->dropmsg = 1;														// par->getcurrtime() == 300 thi par->dropmsg = 0;
+	{
 		par->dropmsg = 1;
 	}
 
 	if( par->SINGLE_FAILURE && par->getcurrtime() == 100 ) {
 		removed = (rand() % par->EN_GPSZ);
 		#ifdef DEBUGLOG
-		log->LOG(&mp1[removed]->getMemberNode()->addr, "Node failed at time=%d", par->getcurrtime());
+		log->LOG(&mp1[removed]->getMemberNode()->addr, "Node 1 failed at time=%d", par->getcurrtime());
 		#endif
 		mp1[removed]->getMemberNode()->bFailed = true;
 	}
